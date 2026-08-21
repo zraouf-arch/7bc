@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7BC Behaviour Tracker</title>
+<style>
+:root {
+  --green-bg:#dff5e5; --green-border:#8fd3a5;
+  --yellow-bg:#fff4b8; --yellow-border:#e4c94c;
+  --orange-bg:#ffd6a0; --orange-border:#ed9c42;
+  --red-bg:#ffc6c6; --red-border:#df6565;
+  --ink:#263238;
+}
+* { box-sizing:border-box; }
+body { margin:0; font-family:Arial, sans-serif; background:#f4f6f8; color:var(--ink); }
+header { background:#2f4858; color:white; padding:18px 25px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+h1 { margin:0; font-size:1.7rem; }
+button { font:inherit; cursor:pointer; border-radius:10px; }
+.reset { background:white; border:0; padding:10px 16px; font-weight:bold; color:#2f4858; }
+.instructions { background:white; text-align:center; padding:12px 20px; border-bottom:1px solid #ddd; }
+.board { display:grid; grid-template-columns:1fr 1fr; gap:20px; padding:22px; min-height:calc(100vh - 130px); }
+.column { background:white; border-radius:16px; padding:18px; box-shadow:0 3px 14px rgba(0,0,0,.08); }
+h2 { text-align:center; margin:0 0 15px; }
+.positive h2 { color:#267747; } .negative h2 { color:#a13f3f; }
+.count { font-size:.85rem; font-weight:normal; color:#69767d; }
+.students { display:flex; flex-wrap:wrap; gap:10px; align-content:flex-start; }
+.card, .negative-card-wrap { width:calc(50% - 5px); }
+.card { min-height:58px; padding:10px 12px; border:2px solid transparent; text-align:left; display:flex; align-items:center; gap:8px; transition:.15s; }
+.card:hover { transform:translateY(-2px); box-shadow:0 4px 10px rgba(0,0,0,.12); }
+.positive-card { background:var(--green-bg); border-color:var(--green-border); }
+.level1 { background:var(--yellow-bg); border-color:var(--yellow-border); }
+.level2 { background:var(--orange-bg); border-color:var(--orange-border); }
+.level3 { background:var(--red-bg); border-color:var(--red-border); }
+.icon { font-size:1.35rem; }
+small { font-weight:normal; }
+.return { width:100%; margin-top:5px; padding:7px; border:1px solid var(--green-border); background:var(--green-bg); color:#246b40; font-size:.78rem; font-weight:bold; }
+.legend { text-align:center; margin:-4px 0 14px; font-size:.85rem; line-height:1.8; }
+@media(max-width:800px) { .board { grid-template-columns:1fr; } .card,.negative-card-wrap { width:100%; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>7BC Behaviour Tracker</h1>
+  <button class="reset" onclick="resetAll()">↻ Reset All Students</button>
+</header>
+<div class="instructions">
+  Click a student in <strong>😊 Positive</strong> to move them to <strong>🟡 Behaviour Concern</strong>.
+  Click again: <strong>🟡 Yellow → 🟠 Orange → 🔴 Red</strong>. Use <strong>Return to Positive</strong> when behaviour improves.
+</div>
+<main class="board">
+<section class="column positive">
+<h2>😊 Positive <span class="count" id="positiveCount"></span></h2>
+<div class="students" id="positiveList"></div>
+</section>
+<section class="column negative">
+<h2>☹️ Behaviour Concern <span class="count" id="negativeCount"></span></h2>
+<div class="legend">🟡 First concern &nbsp; | &nbsp; 🟠 Second concern &nbsp; | &nbsp; 🔴 Third concern</div>
+<div class="students" id="negativeList"></div>
+</section>
+</main>
+<script>
+const students=["Abdulrahim Yusuf","Arif Rahim","Ayman Shaheem","Azza-Dean Soultan","Daniel Demirtas","Abdallah El Safi Wannous","Elias Oleaga","Hameed Rana","Hamza F Fahda","Hamza Z Zahid","Hussain Youssef","Ibrahim Karaki","Ivan Ruhmah","Izaan Amin","Karam Taleb","Mohamad Noun","Murtaza Amiri","Rayan Rashid","Salaheddine Safi","Shafin Habib","Tayyab Bilal","Yaseen Al-Habboby","Yusuf Khan","Zakaria Faruq","Zayn Murphy","Zeerak Zaidi"];
+let state=Object.fromEntries(students.map(s=>[s,0]));
+
+function render(){
+ const positive=document.getElementById('positiveList');
+ const negative=document.getElementById('negativeList');
+ positive.innerHTML=''; negative.innerHTML='';
+ students.forEach(name=>{
+   const level=state[name];
+   if(level===0){
+     const card=document.createElement('button');
+     card.className='card positive-card';
+     card.innerHTML=`<span class="icon">😊</span><span>${name}</span>`;
+     card.onclick=()=>{state[name]=1;render();};
+     positive.appendChild(card);
+   } else {
+     const wrap=document.createElement('div'); wrap.className='negative-card-wrap';
+     const card=document.createElement('button');
+     card.className='card level'+level;
+     const label=level===1?'🟡 First concern':level===2?'🟠 Second concern':'🔴 Third concern';
+     card.innerHTML=`<span class="icon">☹️</span><span>${name}<br><small>${label}</small></span>`;
+     card.onclick=()=>{if(state[name]<3){state[name]++;render();}};
+     const back=document.createElement('button');
+     back.className='return'; back.textContent='😊 Return to Positive';
+     back.onclick=(e)=>{e.stopPropagation();state[name]=0;render();};
+     wrap.append(card,back); negative.appendChild(wrap);
+   }
+ });
+ const p=students.filter(s=>state[s]===0).length;
+ document.getElementById('positiveCount').textContent=`(${p})`;
+ document.getElementById('negativeCount').textContent=`(${students.length-p})`;
+}
+function resetAll(){if(confirm('Reset all students back to the Positive list?')){students.forEach(s=>state[s]=0);render();}}
+render();
+</script>
+</body>
+</html>

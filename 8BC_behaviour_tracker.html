@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>8BC Behaviour Tracker</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f3f6f9;color:#1f2937}
+.wrap{max-width:1200px;margin:0 auto;padding:24px}
+h1{text-align:center;margin:0 0 16px;font-size:38px}
+.reset-row{text-align:center;margin-bottom:14px}
+#resetBtn{background:#374151;color:#fff;border:0;border-radius:9px;padding:11px 18px;font-weight:700;font-size:15px;cursor:pointer}
+.instructions{text-align:center;font-size:15px;line-height:1.5;max-width:900px;margin:0 auto 20px;color:#4b5563}
+.boards{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.panel{background:#fff;border:1px solid #d1d5db;border-radius:14px;padding:18px;min-height:500px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.panel h2{margin:0 0 16px;text-align:center;font-size:28px}
+.positive-title{color:#15803d}.negative-title{color:#b91c1c}
+.list{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px}
+.student{border:0;border-radius:10px;padding:12px 10px;min-height:48px;font-size:16px;font-weight:700;cursor:pointer}
+.positive{background:#dcfce7;color:#166534;border:2px solid #86efac}
+.yellow{background:#fef3c7;color:#92400e;border:2px solid #facc15}
+.orange{background:#ffedd5;color:#9a3412;border:2px solid #fb923c}
+.red{background:#fee2e2;color:#991b1b;border:2px solid #ef4444}
+.concern-card{display:flex;flex-direction:column;gap:6px}
+.return-btn{border:1px solid #86efac;background:#f0fdf4;color:#166534;border-radius:8px;min-height:36px;font-weight:700;cursor:pointer}
+.legend{margin-top:18px;text-align:center;font-size:14px;color:#4b5563;font-weight:600}
+@media(max-width:760px){.wrap{padding:14px}h1{font-size:30px}.boards{grid-template-columns:1fr}.panel{min-height:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>8BC Behaviour Tracker</h1>
+<div class="reset-row"><button id="resetBtn">↻ Reset All Students</button></div>
+<p class="instructions">Click a student in 😊 Positive to move them to 🟡 Behaviour Concern. Click again: 🟡 Yellow → 🟠 Orange → 🔴 Red. Use <strong>Return to Positive</strong> when behaviour improves.</p>
+<div class="boards">
+<section class="panel"><h2 class="positive-title">😊 Positive</h2><div id="positiveList" class="list"></div></section>
+<section class="panel"><h2 class="negative-title">☹️ Behaviour Concern</h2><div id="concernList" class="list"></div><div class="legend">🟡 First concern &nbsp; | &nbsp; 🟠 Second concern &nbsp; | &nbsp; 🔴 Third concern</div></section>
+</div>
+</div>
+<script>
+const students = [
+      "Abdulwahhab Maarbani",
+      "Adam El-Cheikh",
+      "Adam Jallad",
+      "Ali El Safi El Safi Wannous",
+      "Ali M Moula",
+      "Chris Al Kuhaily",
+      "Deniz Bakan",
+      "Enes Sayli",
+      "Fadel Farhat",
+      "Ilyas Tabikh",
+      "Jenk Mehmet",
+      "Kerem Cansever",
+      "Laith Hadid",
+      "Lin Win",
+      "Malik Elafifi",
+      "Mosa Khan",
+      "Muhammad (Zurayq) Ayyaz",
+      "Mustafa Malik",
+      "Omar Akkaoui",
+      "Semih Erzin",
+      "Taner Saglam",
+      "Yusuf Gokdemir",
+      "Zain G Goss",
+      "Zain S Shmeissem",
+      "Zayan Karim"
+];
+const STORAGE_KEY="8BC_behaviour_tracker_state_v1";
+function makeDefaultState(){const o={};students.forEach(n=>o[n]=0);return o}
+let state=makeDefaultState();
+try{const saved=localStorage.getItem(STORAGE_KEY);if(saved){const parsed=JSON.parse(saved);students.forEach(n=>state[n]=Number.isInteger(parsed[n])?parsed[n]:0)}}catch(e){}
+function saveState(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}}
+function render(){
+ const positiveList=document.getElementById("positiveList");
+ const concernList=document.getElementById("concernList");
+ positiveList.innerHTML="";concernList.innerHTML="";
+ students.forEach(name=>{
+  const level=state[name]||0;
+  if(level===0){
+   const b=document.createElement("button");
+   b.className="student positive";b.textContent=name;b.title="Move to Behaviour Concern";
+   b.addEventListener("click",()=>{state[name]=1;saveState();render()});
+   positiveList.appendChild(b);
+  }else{
+   const card=document.createElement("div");card.className="concern-card";
+   const b=document.createElement("button");
+   b.className="student "+(level===1?"yellow":level===2?"orange":"red");
+   b.textContent=name;
+   if(level<3)b.addEventListener("click",()=>{state[name]=Math.min(3,level+1);saveState();render()});
+   const r=document.createElement("button");r.className="return-btn";r.textContent="Return to Positive";
+   r.addEventListener("click",()=>{state[name]=0;saveState();render()});
+   card.appendChild(b);card.appendChild(r);concernList.appendChild(card);
+  }
+ });
+}
+document.getElementById("resetBtn").addEventListener("click",()=>{if(confirm("Reset all students back to Positive?")){state=makeDefaultState();saveState();render()}});
+render();
+</script>
+</body>
+</html>
